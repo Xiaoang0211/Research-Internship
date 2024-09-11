@@ -1,0 +1,12 @@
+defaults:
+  - process: process1
+  - model: model1
+  - _self_
+
+raw:
+  path: 
+
+processed:
+  dir: data
+  name: example_file
+  path: ${processed.dir}/${processed.name}

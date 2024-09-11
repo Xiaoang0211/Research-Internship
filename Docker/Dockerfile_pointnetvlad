@@ -1,0 +1,66 @@
+FROM nvidia/cuda:10.0-cudnn7-devel-ubuntu18.04
+
+# Install some basic utilities
+RUN apt-get update && apt-get install -y \
+        build-essential \
+        cmake \
+        wget \
+        curl \
+        ca-certificates \
+        sudo \
+        git \
+        zip \
+        bzip2 \
+        libx11-6 \
+        python-qt4 \
+        libjpeg-dev \
+        sudo \
+        libpng-dev \
+        libeigen3-dev \
+        libgoogle-glog-dev \
+        libsuitesparse-dev \
+        libsparsehash-dev \
+        libboost-all-dev \
+        libatlas-base-dev &&\
+    rm -rf /var/lib/apt/lists/*
+
+# Create a working directory
+RUN mkdir /app
+WORKDIR /app
+
+# Create a non-root user and switch to it
+RUN adduser --disabled-password --gecos '' --shell /bin/bash user \
+ && chown -R user:user /app
+RUN echo "user ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/90-user
+USER user
+
+# All users can use /home/user as their home directory
+ENV HOME=/home/user
+RUN chmod 777 /home/user
+
+# Install Miniconda and Python 3.7
+ENV CONDA_AUTO_UPDATE_CONDA=false
+ENV PATH=/home/user/miniconda/bin:$PATH
+RUN curl -sLo ~/miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-4.7.12.1-Linux-x86_64.sh \
+ && chmod +x ~/miniconda.sh \
+ && ~/miniconda.sh -b -p ~/miniconda \
+ && rm ~/miniconda.sh \
+ && conda install -y python==3.7.4 \
+ && conda clean -ya
+
+# CUDA 10.1-specific steps
+RUN conda install -c conda-forge tensorflow-gpu=1.15
+RUN conda install -c conda-forge tensorboardx notebook -y
+# RUN conda install -c conda-forge opencv pandas matplotlib tqdm -y
+# RUN conda install -c conda-forge scikit-learn scikit-image -y
+# RUN conda install -c conda-forge numpy=1.16.6 scipy=1.5.3 -y
+RUN conda install cudnn=7.6.5
+
+RUN cd /home/user \
+    && git clone https://github.com/kxhit/pointnetvlad.git --recursive 
+
+
+ENV root=/home/user/pointnetvlad
+
+WORKDIR /home/user
+
